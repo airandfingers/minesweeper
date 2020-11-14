@@ -1,5 +1,5 @@
 import React, { FunctionComponent, SyntheticEvent, useState } from 'react';
-import { createNewGameAction } from '../reducers';
+import { createNewGameAction } from '../actions';
 import { BoardActionDispatch } from '../types'
 
 type NumberInputWithLabelProps = {
@@ -31,7 +31,7 @@ const NewGameForm: FunctionComponent<NewGameFormProps> = ({ dispatch }) => {
     dispatch(createNewGameAction(width, height, numMines))
   }
   return (
-    <form onSubmit={onSubmit}>
+    <form className="new-game" onSubmit={onSubmit}>
       <NumberInputwithLabel label="Width" value={width} min={1} max={10000} setValue={setWidth} />
       <NumberInputwithLabel label="Height" value={height} min={1} max={10000} setValue={setHeight} />
       <NumberInputwithLabel label="# Mines" value={numMines} min={0} max={10000} setValue={setNumMines} />

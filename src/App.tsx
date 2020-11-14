@@ -16,8 +16,10 @@ const App = () => {
       height: 0,
     },
     numMines: 0,
-    mineIndexes: new Set<number>()
+    positionInfos: [],
+    numOpened: 0
   })
+  const { status, numMines, numFlags} = gameState
   return (
     <div className="App">
       <header className="App-header">
@@ -27,7 +29,7 @@ const App = () => {
         <NewGameForm dispatch={dispatch} />
         {gameState.status !== GAME_STATUS.UNINITIALIZED && (
           <div className="game">
-            <GameHeader numMines={gameState.numMines} numFlags={gameState.numFlags} dispatch={dispatch} />
+            <GameHeader {...{ status, numMines, numFlags, dispatch }} />
             <Board {...{ ...gameState, dispatch }} />
           </div>
         )}

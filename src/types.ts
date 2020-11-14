@@ -1,13 +1,8 @@
 import { Dispatch } from 'react'
 
-export enum CELL_CONTENTS {
-  // Possible states for closed cells
-  NEW = 'NEW',
-  FLAG = 'FLAG',
-  DORMANT_MINE = '💣',
-  FALSE_FLAG = '🎌',
-  // Possible states for open cells
-  EXPLODED_MINE = '💥',
+export enum POSITION_VALUE {
+  // Mine or number a cell will reveal when clicked
+  MINE = '💣',
   EMPTY = '',
   ONE = '1',
   TWO = '2',
@@ -18,15 +13,24 @@ export enum CELL_CONTENTS {
   SEVEN = '7',
   EIGHT = '8',
 }
+export enum CELL_DISPLAY {
+  // States a cell can take, depending on user interaction
+  NEW = '',
+  FLAG = '🚩',
+  FALSE_FLAG = '🎌',
+  EXPLODED_MINE = '💥',
+}
+export type CELL_CONTENTS = POSITION_VALUE | CELL_DISPLAY
 export type CellState = {
   contents: CELL_CONTENTS
 }
-export type RowState = Array<CellState>
-export type BoardState = Array<RowState>
+export type BoardState = Array<CellState>
 
-export type Position = {
-  rowNum: number,
-  colNum: number
+export type Position = number
+
+export type PositionInfo = {
+  value: POSITION_VALUE,
+  adjacentPositions?: Position[]
 }
 
 export type BoardSize = {
@@ -47,7 +51,8 @@ export type GameState = {
   numFlags: number,
   boardSize: BoardSize
   numMines: number,
-  mineIndexes: Set<number>
+  positionInfos: PositionInfo[],
+  numOpened: number
 }
 
 export enum BOARD_ACTION {
@@ -59,7 +64,10 @@ export type NewGamePayload = {
   boardSize?: BoardSize,
   numMines?: number
 }
-export type CellActionPayload = Position
+export type CellActionPayload = {
+  rowNum: number,
+  colNum: number
+}
 export type BoardAction =
   | { type: BOARD_ACTION.NEW_GAME, payload: NewGamePayload }
   | { type: BOARD_ACTION.OPEN_CELL, payload: CellActionPayload }

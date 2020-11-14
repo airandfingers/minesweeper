@@ -1,6 +1,6 @@
 import React, { FunctionComponent, SyntheticEvent } from 'react';
-import { createOpenCellAction, createToggleFlagAction } from '../reducers';
-import { GameState, RowState, CellState, BoardActionDispatch, CELL_CONTENTS } from '../types'
+import { createOpenCellAction, createToggleFlagAction } from '../actions';
+import { GameState, CellState, BoardActionDispatch, CELL_DISPLAY } from '../types'
 
 type CellProps = {
   cellState: CellState,
@@ -9,71 +9,60 @@ type CellProps = {
   dispatch: BoardActionDispatch,
 }
 let Cell: FunctionComponent<CellProps> = ({ cellState, rowNum, colNum, dispatch }) => {
+  const { contents } = cellState
   let stateClass
   let onClick
   let onContextMenu
-  let contents = null
-  switch (cellState.contents) {
-    // Possible states for unopened cells
-    case CELL_CONTENTS.NEW:
-      stateClass = 'closed'
+  let textContent: String | null = cellState.contents // CELL_CONTENTS values match what we want to display except for NEW
+  if (contents === CELL_DISPLAY.NEW || contents === CELL_DISPLAY.FLAG) {
+    stateClass = 'closed'
+    onContextMenu = (e: SyntheticEvent) => {
+      e.preventDefault()
+      dispatch(createToggleFlagAction(rowNum, colNum))
+    }
+    if (contents === CELL_DISPLAY.NEW) {
       onClick = () => dispatch(createOpenCellAction(rowNum, colNum))
-      onContextMenu = (e: SyntheticEvent) => {
-        e.preventDefault()
-        dispatch(createToggleFlagAction(rowNum, colNum))
-      }
-      break
-    case CELL_CONTENTS.FLAG:
-      stateClass = 'flagged'
-      onContextMenu = (e: SyntheticEvent) => {
-        e.preventDefault()
-        dispatch(createToggleFlagAction(rowNum, colNum))
-      }
-      contents = '🚩'
-      break
-    // Possible states for unopened cells after game is over
-    case CELL_CONTENTS.DORMANT_MINE:
-    case CELL_CONTENTS.FALSE_FLAG:
-    // Possible states for open cells
-    case CELL_CONTENTS.EXPLODED_MINE:
-    case CELL_CONTENTS.EMPTY:
-    case CELL_CONTENTS.ONE:
-    case CELL_CONTENTS.TWO:
-    case CELL_CONTENTS.THREE:
-    case CELL_CONTENTS.FOUR:
-    case CELL_CONTENTS.FIVE:
-    case CELL_CONTENTS.SIX:
-    case CELL_CONTENTS.SEVEN:
-    case CELL_CONTENTS.EIGHT:
-      stateClass = 'open'
-      contents = cellState.contents
+      textContent = null
+    }
+  } else {
+    stateClass = 'open'
   }
-  return <td className={`cell ${stateClass}`} {...{ onClick, onContextMenu }}>{contents}</td>
+  return <td className={`cell noselect ${stateClass}`} {...{ onClick, onContextMenu }}>{textContent}</td>
 }
 Cell = React.memo(Cell)
 
 type RowProps = {
-  rowState: RowState,
+  cellStates: CellState[],
   rowNum: number,
   dispatch: BoardActionDispatch,
 }
-const Row: FunctionComponent<RowProps> = ({ rowState, rowNum, dispatch }) => (
+let Row: FunctionComponent<RowProps> = ({ cellStates, rowNum, dispatch }) => (
   <tr className="row" key={`row-${rowNum}`}>
-    {rowState.map((cellState, colNum) => (
+    {cellStates.map((cellState, colNum) => (
       <Cell key={`cell-${rowNum}.${colNum}`} {...{ cellState, rowNum, colNum, dispatch }} />
     ))}
   </tr>
+)
+Row = React.memo(Row, (prevProps, nextProps) =>
+  prevProps.cellStates.length === nextProps.cellStates.length &&
+  prevProps.cellStates.every((cellState, i) => cellState.contents === nextProps.cellStates[i].contents)
 )
 
 type BoardProps = GameState & {
   dispatch: BoardActionDispatch,
 }
-const Board: FunctionComponent<BoardProps> = ({ boardState, dispatch }) => {
+const Board: FunctionComponent<BoardProps> = ({ boardState, boardSize: { width, height }, dispatch }) => {
+  const cellStatesByRowNum = []
+  const numCells = width * height
+  for (let i = 0; i < numCells; i += width) {
+    cellStatesByRowNum.push(boardState.slice(i, i + width))
+  }
+
   return (
-    <table>
+    <table onContextMenu={(e) => e.preventDefault()}>
       <tbody>
-        {boardState.map((rowState, rowNum) => (
-          <Row key={`row-${rowNum}`} {...{ rowState, rowNum, dispatch }} />
+        {cellStatesByRowNum.map((cellStates, rowNum) => (
+          <Row key={`row-${rowNum}`} {...{ cellStates, rowNum, dispatch }} />
         ))}
       </tbody>
     </table>
